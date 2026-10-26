@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Earmark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E4E8EA; --surface:#F3F5F6; --ink:#1E2830; --muted:#5A6770; --line:#C3CCD1;
+  --accent:#7A3F63; --accent-soft:#EAD8E3; --faint:#B9C3C8; --danger:#9B2C2C;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#172027; --surface:#202A31; --ink:#DCE3E6; --muted:#93A1A9; --line:#33414A;
+    --accent:#D59ABF; --accent-soft:#3B2935; --faint:#3E4C55; --danger:#E58C8C;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#172027; --surface:#202A31; --ink:#DCE3E6; --muted:#93A1A9; --line:#33414A;
+  --accent:#D59ABF; --accent-soft:#3B2935; --faint:#3E4C55; --danger:#E58C8C;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 4rem)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:17px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--bg);
+  border-bottom:1px solid var(--line);
+}
+.bar{max-width:38rem;margin:0 auto;padding:.75rem 1.25rem 0;display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.mark{display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:1.2rem;padding-bottom:.7rem}
+.mark svg{width:28px;height:18px}
+nav{display:flex;gap:1.25rem}
+nav a{color:var(--muted);text-decoration:none;padding:.35rem 0 .65rem;border-bottom:3px solid transparent;margin-bottom:-1px}
+nav a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:700}
+
+main{max-width:38rem;margin:0 auto;padding:1.5rem 1.25rem 4rem}
+section[hidden]{display:none}
+
+h2{font-size:1.15rem;margin:2rem 0 .65rem;line-height:1.3}
+h2:first-child{margin-top:.5rem}
+.hint{color:var(--muted);font-size:.92rem;margin:-.4rem 0 .7rem}
+
+.chips{display:flex;flex-wrap:wrap;gap:.45rem}
+.chip{
+  border:1px solid var(--line); background:var(--surface); border-radius:999px;
+  padding:.38rem .85rem; cursor:pointer; line-height:1.3;
+}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
+.chip:hover{border-color:var(--muted)}
+.addrow{display:flex;gap:.5rem;margin-top:.6rem}
+input[type=text],input[type=datetime-local],textarea{
+  width:100%; background:var(--surface); border:1px solid var(--line); border-radius:6px;
+  padding:.55rem .7rem;
+}
+textarea{min-height:4.5rem;resize:vertical}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
+
+/* intensity */
+.meter{display:flex;align-items:baseline;gap:.75rem;margin-bottom:.35rem}
+.meter .num{font-size:2.6rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:var(--accent)}
+.meter .word{font-size:1.05rem}
+.wave{position:relative;height:104px;cursor:pointer;touch-action:pan-y;user-select:none;border-radius:6px}
+.wave:focus-within{outline:2px solid var(--accent);outline-offset:4px}
+.wave svg{display:block;width:100%;height:100%;overflow:visible}
+.wave input{position:absolute;inset:0;opacity:0;pointer-events:none;width:100%}
+.scale{display:flex;justify-content:space-between;color:var(--muted);font-size:.85rem;margin-top:.25rem}
+
+.groups{display:grid;gap:1.1rem}
+.groups h3{font-size:.95rem;font-weight:400;color:var(--muted);margin:0 0 .45rem}
+
+.actions{margin-top:2.25rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+.btn{
+  border:0;border-radius:8px;background:var(--accent);color:var(--surface);font-weight:700;
+  padding:.8rem 1.4rem;cursor:pointer;
+}
+.btn.quiet{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:400}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid currentColor;font-weight:400}
+.btn.small{padding:.45rem .9rem;font-size:.92rem}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.req{color:var(--danger);font-size:.92rem}
+
+/* history */
+.day{margin-top:1.75rem}
+.day:first-child{margin-top:0}
+.day h2{margin:0 0 .25rem;font-size:1rem;color:var(--muted);font-weight:400}
+.entry{border-top:1px solid var(--line)}
+.entry:last-child{border-bottom:1px solid var(--line)}
+.row{
+  display:grid;grid-template-columns:4.9rem 1fr auto;gap:.75rem;align-items:center;
+  width:100%;text-align:left;background:none;border:0;padding:.75rem 0;cursor:pointer;
+}
+.row .t{white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums;font-size:.95rem}
+.row .what{font-weight:700;line-height:1.3}
+.row .ctx{color:var(--muted);font-size:.92rem}
+.row .lvl{display:flex;align-items:center;gap:.5rem;font-variant-numeric:tabular-nums}
+.row .lvl svg{width:52px;height:18px}
+.detail{padding:0 0 1rem 5.65rem;font-size:.95rem}
+.detail dl{margin:0 0 .9rem;display:grid;grid-template-columns:auto 1fr;gap:.25rem 1rem}
+.detail dt{color:var(--muted)}
+.detail dd{margin:0}
+.detail .btns{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+
+/* patterns */
+.range{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:1rem}
+.range button{background:var(--surface);border:0;padding:.4rem .85rem;cursor:pointer;font-size:.92rem}
+.range button+button{border-left:1px solid var(--line)}
+.range button[aria-pressed="true"]{background:var(--accent);color:var(--surface);font-weight:700}
+.lede{font-size:1.15rem;line-height:1.45;margin:0 0 .5rem;max-width:34rem}
+.bars{display:grid;grid-template-columns:minmax(6rem,9rem) 1fr auto;gap:.45rem .75rem;align-items:center}
+.bars .lbl{line-height:1.25}
+.bars .track{height:10px;background:var(--faint);border-radius:2px;overflow:hidden}
+.bars .fill{height:100%;background:var(--accent)}
+.bars .n{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.92rem;text-align:right;white-space:nowrap}
+.clock{display:grid;grid-template-columns:repeat(24,1fr);gap:2px}
+.clock div{height:34px;border-radius:2px;background:var(--accent)}
+.clockscale{display:grid;grid-template-columns:repeat(4,1fr);color:var(--muted);font-size:.85rem;margin-top:.3rem}
+.weeks{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;align-items:end;height:110px}
+.weeks div{background:var(--accent);border-radius:2px 2px 0 0;min-height:2px}
+.weekscale{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;color:var(--muted);font-size:.8rem;margin-top:.3rem;text-align:center}
+.empty{color:var(--muted);max-width:30rem}
+.empty p{margin:0 0 1rem}
+.foot{margin-top:2.5rem;color:var(--muted);font-size:.9rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(1.25rem + env(safe-area-inset-bottom,0px));transform:translate(-50%,1rem);
+  background:var(--ink);color:var(--bg);padding:.6rem 1.1rem;border-radius:8px;opacity:0;pointer-events:none;
+  transition:opacity .2s, transform .2s; z-index:20; max-width:calc(100% - 2.5rem)
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion: reduce){.toast{transition:none}}
+@media (max-width:30rem){
+  .detail{padding-left:0}
+  .row{grid-template-columns:4.4rem 1fr auto}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="mark" aria-label="Earmark">
+      <svg viewBox="0 0 28 18" aria-hidden="true"><path d="M1 9h4l2-3 2 7 2-11 2 14 2-12 2 9 2-5 2 3h5" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      Earmark
+    </div>
+    <nav aria-label="Sections">
+      <a href="#log" data-view="log">Log</a>
+      <a href="#history" data-view="history">History</a>
+      <a href="#patterns" data-view="patterns">Patterns</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- LOG -->
+  <section id="v-log">
+    <form id="form" onsubmit="return false" novalidate>
+      <h2 id="formTitle">What set it off?</h2>
+      <p class="hint">Pick every sound that was part of it. Only this is required.</p>
+      <div class="chips" id="sounds" role="group" aria-labelledby="formTitle"></div>
+      <div class="addrow">
+        <input type="text" id="newSound" placeholder="Another sound" aria-label="Add a sound">
+        <button type="button" class="btn quiet small" id="addSound">Add</button>
+      </div>
+
+      <h2 id="lvlH">How strong was it?</h2>
+      <div class="meter" aria-hidden="true"><span class="num" id="lvlNum">5</span><span class="word" id="lvlWord"></span></div>
+      <div class="wave" id="wave">
+        <svg viewBox="0 0 600 104" preserveAspectRatio="none" aria-hidden="true">
+          <defs><clipPath id="clipOn"><rect id="clipRect" x="0" y="0" width="300" height="104"/></clipPath></defs>
+          <path id="waveOff" fill="none" stroke="var(--faint)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+          <path id="waveOn" fill="none" stroke="var(--accent)" stroke-width="2.5" vector-effect="non-scaling-stroke" clip-path="url(#clipOn)" stroke-linejoin="round"/>
+          <line id="waveMark" x1="300" x2="300" y1="0" y2="104" stroke="var(--ink)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <input type="range" id="lvl" min="1" max="10" step="1" value="5" aria-labelledby="lvlH">
+      </div>
+      <div class="scale" aria-hidden="true"><span>Barely noticed</span><span>Lost it</span></div>
+
+      <h2 id="srcH">Who or what was making it?</h2>
+      <input type="text" id="source" aria-labelledby="srcH" placeholder="A person, a pet, a device">
+      <div class="chips" id="sourceSugg" style="margin-top:.55rem"></div>
+
+      <h2 id="placeH">Where were you?</h2>
+      <input type="text" id="place" aria-labelledby="placeH" placeholder="Home, work, a bus">
+      <div class="chips" id="placeSugg" style="margin-top:.55rem"></div>
+
+      <h2>How did it land?</h2>
+      <div class="groups">
+        <div><h3 id="feltH">What you felt</h3><div class="chips" id="felt" role="group" aria-labelledby="feltH"></div></div>
+        <div><h3 id="didH">What you did</h3><div class="chips" id="did" role="group" aria-labelledby="didH"></div></div>
+      </div>
+
+      <h2 id="helpH">What helped, if anything?</h2>
+      <input type="text" id="helped" aria-labelledby="helpH" placeholder="Brown noise, stepping outside, telling them">
+
+      <h2 id="noteH">Anything else</h2>
+      <textarea id="note" aria-labelledby="noteH" placeholder="Hungry, tired, already stressed, a bad day at work…"></textarea>
+
+      <h2 id="whenH">When</h2>
+      <input type="datetime-local" id="when" aria-labelledby="whenH" style="max-width:16rem">
+
+      <div class="actions">
+        <button type="button" class="btn" id="save">Save entry</button>
+        <button type="button" class="btn quiet" id="cancelEdit" hidden>Cancel</button>
+        <span class="req" id="req" hidden role="alert">Pick at least one sound first.</span>
+      </div>
+    </form>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="v-history" hidden>
+    <div id="historyList"></div>
+    <div class="foot" id="histFoot"></div>
+  </section>
+
+  <!-- PATTERNS -->
+  <section id="v-patterns" hidden>
+    <div id="patternsBody"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+
+  const SOUNDS = ["Chewing","Crunching","Slurping","Lip smacking","Swallowing","Sniffing","Throat clearing","Breathing","Coughing","Pen clicking","Typing","Tapping","Footsteps","Whistling","Humming","Cutlery scraping"];
+  const SOURCES = ["Partner","Parent","Sibling","Roommate","Coworker","Classmate","Stranger","Pet"];
+  const PLACES = ["Home","Work","School","Commute","Eating out"];
+  const FELT = ["Anger","Anxiety","Disgust","Panic","Tension","Urge to escape","Guilt afterward"];
+  const DID = ["Left the room","Headphones or earplugs","Played masking noise","Covered my ears","Said something","Mimicked the sound","Stayed and endured it"];
+  const WORDS = {1:"Barely noticed",2:"Noticed it",3:"Distracting",4:"Distracting",5:"Hard to ignore",6:"Hard to ignore",7:"Had to get away",8:"Had to get away",9:"Lost control",10:"Lost control"};
+
+  /* ---------- state ---------- */
+  let entries = [];          // sorted newest first
+  let mode = "local";        // "local" | "db"
+  let col = null;            // db collection ref
+  let downloads = null;
+  let editingId = null;
+  let openId = null;
+  let confirmId = null;
+  let range = 30;
+  const form = { sounds:new Set(), felt:new Set(), did:new Set(), level:5 };
+  let extraSounds = [];
+
+  /* ---------- storage ---------- */
+  const LKEY = "earmark.entries.v1";
+  function loadLocal(){
+    try { const raw = localStorage.getItem(LKEY); return raw ? JSON.parse(raw) : []; } catch(e){ return []; }
+  }
+  function saveLocal(){
+    try { localStorage.setItem(LKEY, JSON.stringify(entries)); return true; } catch(e){ return false; }
+  }
+  function sortEntries(){ entries.sort((a,b)=>b.ts-a.ts); }
+
+  async function putEntry(e){
+    if (mode === "db"){
+      await col.doc(e.id).set(e);
+    } else {
+      const i = entries.findIndex(x=>x.id===e.id);
+      if (i>=0) entries[i]=e; else entries.push(e);
+      sortEntries();
+      if (!saveLocal()) throw new Error("local");
+      renderAll();
+    }
+  }
+  async function removeEntry(id){
+    if (mode === "db"){
+      await col.doc(id).delete();
+    } else {
+      entries = entries.filter(x=>x.id!==id);
+      saveLocal(); renderAll();
+    }
+  }
+
+  async function connect(){
+    if (!window.claude || typeof window.claude.use !== "function") return;
+    try {
+      downloads = await window.claude.use("downloads");
+      renderHistoryFoot();
+      const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+      if (!db || !user) return;
+      const uid = await user.id();
+      if (!uid) return;
+      col = db.doc("data/users/" + uid + "/earmark").collection("entries");
+      let first = true;
+      col.orderBy("ts","desc").limit(1000).onSnapshot(async snap => {
+        const remote = snap.docs.map(d=>d.data()).filter(Boolean);
+        if (first){
+          first = false;
+          mode = "db";
+          const local = loadLocal();
+          const have = new Set(remote.map(r=>r.id));
+          const missing = local.filter(l=>!have.has(l.id));
+          for (const m of missing){ try { await col.doc(m.id).set(m); } catch(e){} }
+          if (missing.length) { try { localStorage.removeItem(LKEY); } catch(e){} }
+        }
+        entries = remote; sortEntries(); renderAll();
+      }, () => { toast("Lost connection to your saved entries. Reload the page to reconnect."); });
+    } catch(e){ /* stay local */ }
+  }
+
+  /* ---------- helpers ---------- */
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function toast(msg){
+    const t=$("toast"); t.textContent=msg; t.classList.add("on");
+    clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("on"),2600);
+  }
+  function localInputValue(d){
+    const p=n=>String(n).padStart(2,"0");
+    return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes());
+  }
+  function rng(seed){ let a = seed>>>0; return () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function hash(s){ let h=2166136261; for (const c of String(s)) { h^=c.charCodeAt(0); h=Math.imul(h,16777619); } return h>>>0; }
+  function cap(s){ s=s.trim(); return s ? s[0].toUpperCase()+s.slice(1) : s; }
+
+  /* waveform: amplitude ramps left to right, getting more jagged */
+  function rampPath(w,h){
+    const r = rng(7), mid=h/2, pts=[];
+    for (let x=0;x<=w;x+=4){
+      const p = x/w;
+      const amp = 1.5 + Math.pow(p,1.5)*(mid-6);
+      const smooth = Math.sin(x*0.09)*0.55 + Math.sin(x*0.23+1)*0.3;
+      const jag = (r()*2-1);
+      const mix = smooth*(1-p) + jag*p + smooth*0.25*p;
+      pts.push((x?"L":"M")+x+" "+(mid+amp*Math.max(-1,Math.min(1,mix))).toFixed(1));
+    }
+    return pts.join("");
+  }
+  function miniWave(level, seed){
+    const w=52,h=18,mid=h/2,r=rng(hash(seed)),pts=[];
+    const amp = 0.6 + Math.pow(level/10,1.6)*(mid-1);
+    for (let x=0;x<=w;x+=2.6){
+      const jag = level>5 ? (r()*2-1) : Math.sin(x*0.5+r()*2);
+      pts.push((x?"L":"M")+x.toFixed(1)+" "+(mid+amp*jag).toFixed(1));
+    }
+    return `<svg viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${pts.join("")}" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+  }
+
+  /* ---------- log form ---------- */
+  function chip(label, pressed, attrs=""){
+    return `<button type="button" class="chip" aria-pressed="${pressed}" ${attrs}>${esc(label)}</button>`;
+  }
+  function knownSounds(){
+    const seen = new Set(SOUNDS.map(s=>s.toLowerCase()));
+    const out = [...SOUNDS];
+    const add = s => { const k=s.toLowerCase(); if(!seen.has(k)){ seen.add(k); out.push(s);} };
+    entries.forEach(e => (e.sounds||[]).forEach(add));
+    extraSounds.forEach(add);
+    form.sounds.forEach(add);
+    return out;
+  }
+  function recents(field, base){
+    const counts = new Map();
+    entries.forEach(e => { const v=(e[field]||"").trim(); if(v){ counts.set(v,(counts.get(v)||0)+1); } });
+    const fromLog = [...counts.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+    const seen = new Set(); const out=[];
+    [...fromLog, ...base].forEach(v => { const k=v.toLowerCase(); if(!seen.has(k)){ seen.add(k); out.push(v);} });
+    return out.slice(0,10);
+  }
+  function renderForm(){
+    $("sounds").innerHTML = knownSounds().map(s => chip(s, form.sounds.has(s), `data-set="sounds" data-v="${esc(s)}"`)).join("");
+    $("felt").innerHTML = FELT.map(s => chip(s, form.felt.has(s), `data-set="felt" data-v="${esc(s)}"`)).join("");
+    $("did").innerHTML = DID.map(s => chip(s, form.did.has(s), `data-set="did" data-v="${esc(s)}"`)).join("");
+    const src = $("source").value.trim().toLowerCase(), plc = $("place").value.trim().toLowerCase();
+    $("sourceSugg").innerHTML = recents("source", SOURCES).map(s => chip(s, s.toLowerCase()===src, `data-fill="source" data-v="${esc(s)}"`)).join("");
+    $("placeSugg").innerHTML = recents("place", PLACES).map(s => chip(s, s.toLowerCase()===plc, `data-fill="place" data-v="${esc(s)}"`)).join("");
+  }
+  document.addEventListener("click", ev => {
+    const b = ev.target.closest(".chip[data-set]");
+    if (b){
+      const set = form[b.dataset.set], v = b.dataset.v;
+      set.has(v) ? set.delete(v) : set.add(v);
+      b.setAttribute("aria-pressed", set.has(v));
+      if (b.dataset.set==="sounds" && set.size) $("req").hidden = true;
+      return;
+    }
+    const f = ev.target.closest(".chip[data-fill]");
+    if (f){
+      const inp = $(f.dataset.fill);
+      inp.value = inp.value.trim().toLowerCase()===f.dataset.v.toLowerCase() ? "" : f.dataset.v;
+      renderForm();
+    }
+  });
+  ["source","place"].forEach(id => $(id).addEventListener("input", () => {
+    const v=$(id).value.trim().toLowerCase();
+    $(id==="source"?"sourceSugg":"placeSugg").querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed", c.dataset.v.toLowerCase()===v));
+  }));
+  function addSound(){
+    const v = cap($("newSound").value);
+    if (!v) return;
+    const existing = knownSounds().find(s=>s.toLowerCase()===v.toLowerCase());
+    const name = existing || v;
+    if (!existing) extraSounds.push(name);
+    form.sounds.add(name);
+    $("newSound").value=""; $("req").hidden = true;
+    renderForm();
+  }
+  $("addSound").addEventListener("click", addSound);
+  $("newSound").addEventListener("keydown", e => { if(e.key==="Enter"){ e.preventDefault(); addSound(); } });
+
+  /* intensity control */
+  const VW = 600, VH = 104;
+  const ramp = rampPath(VW, VH);
+  $("waveOff").setAttribute("d", ramp);
+  $("waveOn").setAttribute("d", ramp);
+  function setLevel(v){
+    v = Math.max(1, Math.min(10, Math.round(v)));
+    form.level = v;
+    $("lvl").value = v;
+    $("lvl").setAttribute("aria-valuetext", v + ", " + WORDS[v]);
+    $("lvlNum").textContent = v;
+    $("lvlWord").textContent = WORDS[v];
+    const x = (v/10)*VW;
+    $("clipRect").setAttribute("width", x);
+    $("waveMark").setAttribute("x1", x); $("waveMark").setAttribute("x2", x);
+  }
+  $("lvl").addEventListener("input", e => setLevel(+e.target.value));
+  const wave = $("wave");
+  function fromPointer(e){
+    const r = wave.getBoundingClientRect();
+    setLevel(Math.ceil(((e.clientX - r.left)/r.width)*10));
+  }
+  let dragging = false;
+  wave.addEventListener("pointerdown", e => { dragging = true; wave.setPointerCapture(e.pointerId); fromPointer(e); $("lvl").focus({preventScroll:true}); });
+  wave.addEventListener("pointermove", e => { if (dragging) fromPointer(e); });
+  ["pointerup","pointercancel"].forEach(t => wave.addEventListener(t, () => dragging = false));
+
+  function resetForm(){
+    editingId = null;
+    form.sounds.clear(); form.felt.clear(); form.did.clear();
+    ["source","place","helped","note","newSound"].forEach(id => $(id).value = "");
+    $("when").value = localInputValue(new Date());
+    setLevel(5);
+    $("save").textContent = "Save entry";
+    $("cancelEdit").hidden = true;
+    $("req").hidden = true;
+    renderForm();
+  }
+  function loadIntoForm(e){
+    editingId = e.id;
+    form.sounds = new Set(e.sounds||[]); form.felt = new Set(e.felt||[]); form.did = new Set(e.did||[]);
+    $("source").value = e.source||""; $("place").value = e.place||"";
+    $("helped").value = e.helped||""; $("note").value = e.note||"";
+    $("when").value = localInputValue(new Date(e.ts));
+    setLevel(e.level||5);
+    $("save").textContent = "Save changes";
+    $("cancelEdit").hidden = false;
+    renderForm();
+  }
+  $("cancelEdit").addEventListener("click", () => { resetForm(); location.hash = "history"; });
+
+  $("save").addEventListener("click", async () => {
+    if (!form.sounds.size){ $("req").hidden = false; $("sounds").scrollIntoView({behavior:"smooth",block:"center"}); return; }
+    const whenVal = $("when").value;
+    const ts = whenVal ? new Date(whenVal).getTime() : Date.now();
+    const e = {
+      id: editingId || uid(),
+      ts: isNaN(ts) ? Date.now() : ts,
+      sounds: [...form.sounds],
+      level: form.level,
+      source: cap($("source").value),
+      place: cap($("place").value),
+      felt: [...form.felt],
+      did: [...form.did],
+      helped: $("helped").value.trim(),
+      note: $("note").value.trim()
+    };
+    const wasEdit = !!editingId;
+    $("save").disabled = true;
+    try {
+      await putEntry(e);
+      toast(wasEdit ? "Changes saved" : "Entry saved");
+      resetForm();
+      if (wasEdit) location.hash = "history"; else window.scrollTo({top:0});
+    } catch(err){
+      toast(err && err.code === "quota_exceeded" ? "Storage is full. Export your entries, then delete old ones." : "Couldn’t save. Check your connection and try again.");
+    } finally { $("save").disabled = false; }
+  });
+
+  /* ---------- history ---------- */
+  function dayLabel(d){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const dd = new Date(d); dd.setHours(0,0,0,0);
+    const diff = Math.round((today - dd)/86400000);
+    if (diff===0) return "Today";
+    if (diff===1) return "Yesterday";
+    const opts = {weekday:"long", month:"short", day:"numeric"};
+    if (dd.getFullYear() !== today.getFullYear()) opts.year = "numeric";
+    return dd.toLocaleDateString(undefined, opts);
+  }
+  const timeFmt = ts => new Date(ts).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
+  function ctxLine(e){
+    const bits=[];
+    if (e.source) bits.push(e.source);
+    if (e.place) bits.push(e.place);
+    return bits.join(", ");
+  }
+  function renderHistory(){
+    const el = $("historyList");
+    if (!entries.length){
+      el.innerHTML = `<div class="empty"><p>Nothing logged yet. An entry takes about ten seconds: pick the sound, set how strong it was, save.</p><a class="btn" href="#log" style="display:inline-block;text-decoration:none">Log an episode</a></div>`;
+      return;
+    }
+    const groups = new Map();
+    entries.forEach(e => { const k = new Date(e.ts).toDateString(); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(e); });
+    let html = "";
+    for (const [k, list] of groups){
+      html += `<div class="day"><h2>${esc(dayLabel(list[0].ts))}</h2>`;
+      for (const e of list){
+        const open = openId === e.id;
+        html += `<div class="entry"><button class="row" data-open="${esc(e.id)}" aria-expanded="${open}">
+          <span class="t">${esc(timeFmt(e.ts))}</span>
+          <span><span class="what">${esc((e.sounds||[]).join(", "))}</span>${ctxLine(e)?`<br><span class="ctx">${esc(ctxLine(e))}</span>`:""}</span>
+          <span class="lvl">${miniWave(e.level, e.id)}<span aria-label="Intensity ${e.level} of 10">${e.level}</span></span>
+        </button>`;
+        if (open){
+          const rows = [];
+          if (e.felt && e.felt.length) rows.push(["Felt", e.felt.join(", ")]);
+          if (e.did && e.did.length) rows.push(["Did", e.did.join(", ")]);
+          if (e.helped) rows.push(["Helped", e.helped]);
+          if (e.note) rows.push(["Note", e.note]);
+          rows.push(["Intensity", e.level + " of 10, " + WORDS[e.level].toLowerCase()]);
+          html += `<div class="detail"><dl>${rows.map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join("")}</dl><div class="btns">`;
+          if (confirmId === e.id){
+            html += `<span>Delete this entry?</span><button class="btn danger small" data-del="${esc(e.id)}">Delete</button><button class="btn quiet small" data-keep>Keep it</button>`;
+          } else {
+            html += `<button class="btn quiet small" data-edit="${esc(e.id)}">Edit</button><button class="btn quiet small" data-ask="${esc(e.id)}">Delete</button>`;
+          }
+          html += `</div></div>`;
+        }
+        html += `</div>`;
+      }
+      html += `</div>`;
+    }
+    el.innerHTML = html;
+  }
+  $("historyList").addEventListener("click", async ev => {
+    const t = ev.target.closest("button"); if (!t) return;
+    if (t.dataset.open){ openId = openId===t.dataset.open ? null : t.dataset.open; confirmId=null; renderHistory(); return; }
+    if (t.dataset.edit){ const e = entries.find(x=>x.id===t.dataset.edit); if(e){ loadIntoForm(e); location.hash="log"; window.scrollTo({top:0}); } return; }
+    if (t.dataset.ask){ confirmId = t.dataset.ask; renderHistory(); return; }
+    if ("keep" in t.dataset){ confirmId = null; renderHistory(); return; }
+    if (t.dataset.del){
+      try { await removeEntry(t.dataset.del); openId=null; confirmId=null; toast("Entry deleted"); }
+      catch(e){ toast("Couldn’t delete. Check your connection and try again."); }
+    }
+  });
+  function renderHistoryFoot(){
+    const where = mode==="db" ? "Entries are private to you and sync wherever you open this page." : "Entries are saved in this browser only.";
+    $("histFoot").innerHTML = `<span>${where}</span>` + (downloads && entries.length ? `<button class="linkbtn" id="exportBtn">Export as CSV</button>` : "");
+    const b = $("exportBtn"); if (b) b.addEventListener("click", exportCsv);
+  }
+  async function exportCsv(){
+    const q = v => `"${String(v??"").replace(/"/g,'""')}"`;
+    const head = ["Date","Time","Sounds","Intensity","Source","Place","Felt","Did","Helped","Note"];
+    const lines = [head.join(",")].concat(entries.map(e => {
+      const d = new Date(e.ts);
+      return [d.toLocaleDateString("en-CA"), d.toTimeString().slice(0,5), (e.sounds||[]).join("; "), e.level, e.source, e.place, (e.felt||[]).join("; "), (e.did||[]).join("; "), e.helped, e.note].map(q).join(",");
+    }));
+    try { await downloads.save({filename:"earmark-entries.csv", data:lines.join("\n")}); }
+    catch(e){ if (e && e.code && e.code !== "declined" && e.code !== "cancelled") toast("Couldn’t export the file."); }
+  }
+
+  /* ---------- patterns ---------- */
+  function tally(list, fn){
+    const m = new Map();
+    list.forEach(e => { const vals = fn(e); (Array.isArray(vals)?vals:[vals]).forEach(v => { if(!v) return; const o = m.get(v)||{n:0,sum:0}; o.n++; o.sum+=e.level; m.set(v,o); }); });
+    return [...m.entries()].map(([k,o])=>({k, n:o.n, avg:o.sum/o.n})).sort((a,b)=>b.n-a.n || b.avg-a.avg);
+  }
+  function bars(rows, showAvg){
+    if (!rows.length) return `<p class="hint" style="margin:0">Nothing recorded for this yet.</p>`;
+    const max = rows[0].n;
+    return `<div class="bars">` + rows.slice(0,8).map(r =>
+      `<span class="lbl">${esc(r.k)}</span><span class="track"><span class="fill" style="display:block;width:${(r.n/max*100).toFixed(1)}%"></span></span><span class="n">${r.n}×${showAvg?`, avg ${r.avg.toFixed(1)}`:""}</span>`
+    ).join("") + `</div>`;
+  }
+  function renderPatterns(){
+    const el = $("patternsBody");
+    const cutoff = range ? Date.now() - range*86400000 : 0;
+    const list = entries.filter(e => e.ts >= cutoff);
+    const rangeHtml = `<div class="range" role="group" aria-label="Time range">${[[30,"30 days"],[90,"90 days"],[0,"All time"]].map(([v,l])=>`<button type="button" data-range="${v}" aria-pressed="${range===v}">${l}</button>`).join("")}</div>`;
+    if (entries.length < 3){
+      el.innerHTML = `<div class="empty"><p>Patterns show up after a few entries. Log at least three and this page will start showing which sounds, places and times hit hardest.</p><a class="btn" href="#log" style="display:inline-block;text-decoration:none">Log an episode</a></div>`;
+      return;
+    }
+    if (!list.length){
+      el.innerHTML = rangeHtml + `<p class="empty">No entries in this range. Try a longer one.</p>`;
+      return;
+    }
+    const avg = list.reduce((s,e)=>s+e.level,0)/list.length;
+    const sounds = tally(list, e=>e.sounds);
+    const worst = [...sounds].filter(s=>s.n>=2).sort((a,b)=>b.avg-a.avg)[0];
+    const span = range ? `in the last ${range} days` : "so far";
+    let lede = `${list.length} ${list.length===1?"episode":"episodes"} ${span}, averaging ${avg.toFixed(1)} out of 10. ${esc(sounds[0].k)} comes up most often`;
+    lede += worst && worst.k !== sounds[0].k ? `, but ${esc(worst.k.toLowerCase())} hits hardest when it does.` : ".";
+
+    // time of day
+    const hours = new Array(24).fill(0);
+    list.forEach(e => hours[new Date(e.ts).getHours()]++);
+    const hmax = Math.max(...hours);
+    const peak = hours.indexOf(hmax);
+    const fmtH = h => new Date(2000,0,1,h).toLocaleTimeString(undefined,{hour:"numeric"});
+    const clock = `<div class="clock" role="img" aria-label="Most episodes around ${fmtH(peak)}">${hours.map((n,h)=>`<div title="${fmtH(h)}: ${n}" style="opacity:${n? (0.18 + 0.82*n/hmax).toFixed(2) : 0.07}"></div>`).join("")}</div>
+      <div class="clockscale"><span>${fmtH(0)}</span><span>${fmtH(6)}</span><span>${fmtH(12)}</span><span>${fmtH(18)}</span></div>`;
+
+    // weeks
+    const weekStart = d => { const x=new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x.getTime(); };
+    const thisWeek = weekStart(Date.now());
+    const wk = []; for (let i=7;i>=0;i--) wk.push({t: thisWeek - i*7*86400000, n:0});
+    entries.forEach(e => { const w = weekStart(e.ts); const slot = wk.find(x=>x.t===w); if (slot) slot.n++; });
+    const wmax = Math.max(1, ...wk.map(w=>w.n));
+    const weeks = `<div class="weeks" role="img" aria-label="Episodes per week, last 8 weeks: ${wk.map(w=>w.n).join(", ")}">${wk.map(w=>`<div title="${w.n}" style="height:${(w.n/wmax*100).toFixed(0)}%"></div>`).join("")}</div>
+      <div class="weekscale">${wk.map((w,i)=>`<span>${i===7?"Now":new Date(w.t).toLocaleDateString(undefined,{month:"numeric",day:"numeric"})}</span>`).join("")}</div>`;
+
+    el.innerHTML = rangeHtml + `<p class="lede">${lede}</p>
+      <h2>Sounds</h2><p class="hint">How often each came up, and its average intensity.</p>${bars(sounds,true)}
+      <h2>Time of day</h2><p class="hint">Stronger color means more episodes. Busiest around ${fmtH(peak).toLowerCase()}.</p>${clock}
+      <h2>Who or what</h2>${bars(tally(list,e=>e.source),true)}
+      <h2>Where</h2>${bars(tally(list,e=>e.place),true)}
+      <h2>What you did</h2>${bars(tally(list,e=>e.did),false)}
+      <h2>What you felt</h2>${bars(tally(list,e=>e.felt),false)}
+      <h2>Last 8 weeks</h2>${weeks}`;
+  }
+  $("patternsBody").addEventListener("click", ev => {
+    const b = ev.target.closest("[data-range]"); if (!b) return;
+    range = +b.dataset.range; renderPatterns();
+  });
+
+  /* ---------- routing ---------- */
+  const VIEWS = ["log","history","patterns"];
+  function route(){
+    let v = location.hash.replace("#","");
+    if (!VIEWS.includes(v)) v = "log";
+    VIEWS.forEach(n => {
+      $("v-"+n).hidden = n!==v;
+      document.querySelector(`nav a[data-view="${n}"]`).toggleAttribute("aria-current", n===v);
+      if (n===v) document.querySelector(`nav a[data-view="${n}"]`).setAttribute("aria-current","page");
+    });
+    if (v==="patterns") renderPatterns();
+    if (v==="history") renderHistory();
+  }
+  window.addEventListener("hashchange", () => { route(); window.scrollTo({top:0}); });
+
+  function renderAll(){
+    renderForm(); renderHistory(); renderHistoryFoot();
+    if (!$("v-patterns").hidden) renderPatterns();
+  }
+
+  /* ---------- boot ---------- */
+  entries = loadLocal(); sortEntries();
+  resetForm();
+  route();
+  renderAll();
+  connect();
+})();
+</script>
+</body>
+</html>
