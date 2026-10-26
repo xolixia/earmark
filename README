@@ -1,0 +1,49 @@
+# Earmark
+
+A simple tracker for misophonia triggers.
+
+**Open the app:** https://xolixia.github.io/earmark/
+
+Misophonia can be easier to manage when you can see your patterns: which
+sounds get to you, who or where they come from, what time of day is
+worst, and what actually helps. Earmark lets you log an episode in a
+few seconds, even when you're still rattled, and shows those patterns
+back to you over time.
+
+## What it does
+
+- **Log** an episode: the sound, how strong it was (1 to 10), who or
+  what was making it, where you were, what you felt, what you did,
+  and what helped. Only the sound is required.
+- **History** lists your entries by day. Tap one to see details, edit
+  it, or delete it.
+- **Patterns** shows your most common triggers, which ones hit
+  hardest, the people and places involved, the times of day that are
+  worst, and how things have changed over the last eight weeks.
+
+## Your data stays with you
+
+Earmark has no accounts and no server. Entries are saved only in the
+browser you use, on your own device. Nobody else, including me, can
+see them.
+
+This also means:
+
+- Use the same browser on the same device each time, or you'll start
+  with an empty log.
+- Clearing your browser's site data, or using a private window,
+  erases your entries.
+
+## Use it like an app
+
+- **iPhone (Safari):** tap Share, then Add to Home Screen.
+- **Android (Chrome):** tap the ⋮ menu, then Add to Home screen.
+- **Computer:** bookmark it, or use the install icon in the address
+  bar in Chrome or Edge.
+
+## A note
+
+Earmark is a personal log, not a medical tool. If misophonia is
+affecting your daily life, an audiologist or a therapist familiar
+with it can help, and your Earmark history can be useful to bring
+along.
